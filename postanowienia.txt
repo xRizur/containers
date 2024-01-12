@@ -1,0 +1,10 @@
+przestrzeń to kwadratowa siatka 2D - parter
+kontenery i korytarze kwadratowe, takich samych rozmiarów
+jeden korytarz, do niego podłączone wszystkie kontenery
+chromosom reprezentowany typem kontenera (np 1 - kuchnia)
+funkcja oceny - określić optymalną ilość mieszkań na kuchnię, odległość między kontenerami mierzona w blokach korytarza
+biblioteka DEAP
+selekcja na początku elitaryzm ? potem testy
+do sprawdzenia. preferowany sposób mutacji: wzięcie wycinka siatki i wygenerowanie go na nowo
+przedstawienie w bibliotece graficznej najlepszej siatki ( podobnie do czata )
+PLIK .PY
