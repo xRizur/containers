@@ -16,6 +16,7 @@ colors = ['grey', 'blue', 'green', 'red', 'yellow']
 labels = ['Korytarz', 'Mieszkalny', 'Kuchnia', 'Sanitariaty', 'Przestrzeń wspólna']
 cmap = mcolors.ListedColormap(colors)
 
+
 def fitnessFunction(individual):
     grid = np.array(individual).reshape(GRID_HEIGHT, GRID_WIDTH)
 
@@ -24,9 +25,9 @@ def fitnessFunction(individual):
     num_kitchen = np.sum(grid == KITCHEN)
     num_common = np.sum(grid == COMMON)
     num_sanitary = np.sum(grid == SANITARY)
-    
+
     # Oblicz średnią odległość od kontenerów mieszkalnych do innych typów kontenerów
-    distance_score = calculateAverageDistance(grid) * 2.5
+    distance_score = calculateAverageDistance(grid) * num_residential
     # Optymalne proporcje
     ideal_residential_per_kitchen = 5
     ideal_residential_per_common = 10
@@ -40,15 +41,17 @@ def fitnessFunction(individual):
     # Ocena dostępności do korytarza
     accessibility_score = evaluateAccessibility(grid)
 
-    residential_score = num_residential * (-15)
+    residential_score = num_residential * (-17)
 
     # Łączna ocena
     total_score = kitchen_score + common_score + sanitary_score + accessibility_score + distance_score + residential_score
     return total_score,
 
+
 def calculateAverageDistance(grid):
     residential_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == RESIDENTIAL]
-    other_container_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] in [KITCHEN, SANITARY, COMMON]]
+    other_container_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if
+                                 grid[i][j] in [KITCHEN, SANITARY, COMMON]]
 
     total_distance = 0
     for res_loc in residential_locations:
@@ -63,25 +66,28 @@ def calculateAverageDistance(grid):
 
     return average_distance
 
+
 def manhattanDistance(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
 
 
 def isDirectlyConnectedToCorridor(grid, i, j):
     # Sprawdza, czy dana komórka jest bezpośrednio połączona z korytarzem
-    return (j+1 < len(grid[i]) and grid[i][j+1] == CORRIDOR) or (
-            i+1 < len(grid) and grid[i+1][j] == CORRIDOR ) or (
-            j-1 > 0 and grid[i][j-1] == CORRIDOR) or (
-            i-1 > 0 and grid[i-1][j] == CORRIDOR)
+    return (j + 1 < len(grid[i]) and grid[i][j + 1] == CORRIDOR) or (
+            i + 1 < len(grid) and grid[i + 1][j] == CORRIDOR) or (
+            j - 1 > 0 and grid[i][j - 1] == CORRIDOR) or (
+            i - 1 > 0 and grid[i - 1][j] == CORRIDOR)
+
 
 def isCorridorConnectedToCorridor(grid, i, j):
-    # Sprawdza, czy dana komórka korytarza jest połączona z więcej niż jednym korytarzem
-    numberOfNeighbourCorridors = (int(j+1 < len(grid[i]) and grid[i][j+1] == CORRIDOR) + int(
-            i+1 < len(grid) and grid[i+1][j] == CORRIDOR ) + int(
-            j-1 > 0 and grid[i][j-1] == CORRIDOR) + int(
-            i-1 > 0 and grid[i-1][j] == CORRIDOR))
+    # Sprawdza, czy dana komórka korytarza jest połączona z więcej niż jednym korytarzem lub jest na brzegu gridu
+    numberOfNeighbourCorridors = (int(j + 1 < len(grid[i]) and grid[i][j + 1] == CORRIDOR) + int(
+        i + 1 < len(grid) and grid[i + 1][j] == CORRIDOR) + int(
+        j - 1 > 0 and grid[i][j - 1] == CORRIDOR) + int(
+        i - 1 > 0 and grid[i - 1][j] == CORRIDOR))
     logic_value = (numberOfNeighbourCorridors > 1) or \
-                   ((j + 1 > len(grid[i])) or (j - 1 < 0) or (i + 1 > len(grid)) or (i - 1 < 0))
+                  (((j + 1 > len(grid[i])) or (j - 1 < 0) or (i + 1 > len(grid)) or (i - 1 < 0))
+                   and numberOfNeighbourCorridors > 0)
     return logic_value
 
 
@@ -96,12 +102,9 @@ def evaluateAccessibility(grid):
                     accessibility_score += 20  # Duża kara za brak bezpośredniego połączenia
             if grid[i][j] == CORRIDOR:
                 if not isCorridorConnectedToCorridor(grid, i, j):
-                    accessibility_score += 40  # Kara za niepołączone ze sobą korytarze
+                    accessibility_score += 100  # Kara za niepołączone ze sobą korytarze
 
     return accessibility_score
-
-
-# ... (reszta kodu)
 
 
 # Inicjalizacja DEAP
@@ -117,6 +120,7 @@ toolbox.register("evaluate", fitnessFunction)
 toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", tools.mutUniformInt, low=0, up=len(CONTAINER_TYPES) - 1, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
+
 
 def main():
     # Inicjalizacja populacji
@@ -134,12 +138,12 @@ def main():
 
     # Parametry algorytmu ewolucyjnego
     prob_cross = 0.7
-    prob_mut = 0.2
+    prob_mut = 0.5
     num_generations = 500
 
     # Uruchomienie algorytmu ewolucyjnego
     pop, log = algorithms.eaSimple(pop, toolbox, cxpb=prob_cross, mutpb=prob_mut,
-                                   ngen=num_generations, stats=stats, 
+                                   ngen=num_generations, stats=stats,
                                    halloffame=hof, verbose=True)
 
     # Wizualizacja najlepszego rozwiązania
@@ -150,6 +154,7 @@ def main():
     plotGrid(best)
 
     return pop, log, hof
+
 
 # Wizualizacja
 def plotGrid(grid):
@@ -176,6 +181,7 @@ def plotGrid(grid):
     plt.yticks(ticks=np.arange(GRID_HEIGHT), labels=np.arange(GRID_HEIGHT))
     plt.title("Rozmieszczenie kontenerów")
     plt.show()
+
 
 if __name__ == "__main__":
     main()
