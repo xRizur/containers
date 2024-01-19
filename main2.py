@@ -44,7 +44,7 @@ def fitnessFunction(individual):
 
     residential_score = num_residential * (-20)
 
-    corridor_score = isCorridorFullyConnectedScore(grid) * 15
+    corridor_score = isCorridorFullyConnectedScore(grid) * 25
 
     # Łączna ocena
     total_score = kitchen_score + common_score + sanitary_score + accessibility_score + \
@@ -53,22 +53,19 @@ def fitnessFunction(individual):
 
 
 def calculateAverageDistance(grid):
-    # def average_distance(locations1, locations2):
-    #     total_distance = 0
-    #     num_pairs = 0
-    #     ## Szukamy dystansu do najbliższego kontenera
-    #     for loc1 in locations1:
-    #         min_distance = 100
-    #         for loc2 in locations2:
-    #             distance = manhattanDistance(loc1, loc2)
-    #             min_distance = min(min_distance, distance)
-    #         total_distance += min_distance
-    #         num_pairs += 1
-    #
-    #     return total_distance / num_pairs if num_pairs > 0 else 500
     def average_distance(locations1, locations2):
-        total_distance = sum(manhattanDistance(loc1, loc2) for loc1 in locations1 for loc2 in locations2)
-        return total_distance / (len(locations1) * len(locations2)) if locations1 and locations2 else 500
+        total_distance = 0
+        num_pairs = 0
+        ## Szukamy dystansu do najbliższego kontenera
+        for loc1 in locations1:
+            min_distance = 100
+            for loc2 in locations2:
+                distance = manhattanDistance(loc1, loc2)
+                min_distance = min(min_distance, distance)
+            total_distance += min_distance
+            num_pairs += 1
+
+        return total_distance / num_pairs if num_pairs > 0 else 200
 
     residential_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == RESIDENTIAL]
     kitchen_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == KITCHEN]
@@ -182,7 +179,7 @@ def main():
     # Parametry algorytmu ewolucyjnego
     prob_cross = 0.7
     prob_mut = 0.5
-    num_generations = 500
+    num_generations = 1000
 
     # Uruchomienie algorytmu ewolucyjnego
     pop, log = algorithms.eaSimple(pop, toolbox, cxpb=prob_cross, mutpb=prob_mut,
