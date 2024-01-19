@@ -27,45 +27,88 @@ def fitnessFunction(individual):
     num_sanitary = np.sum(grid == SANITARY)
 
     # Oblicz średnią odległość od kontenerów mieszkalnych do innych typów kontenerów
-    distance_score = calculateAverageDistance(grid) * num_residential
+    kitchen_distance, sanitary_distance, common_distance, = calculateAverageDistance(grid)
+
     # Optymalne proporcje
     ideal_residential_per_kitchen = 5
     ideal_residential_per_common = 10
     ideal_residential_per_sanitary = 3
 
     # Obliczenie kar za nieoptymalne proporcje
-    kitchen_score = abs(num_residential - ideal_residential_per_kitchen * num_kitchen) * 4
-    common_score = abs(num_residential - ideal_residential_per_common * num_common) * 4
-    sanitary_score = abs(num_residential - ideal_residential_per_sanitary * num_sanitary) * 4
+    kitchen_score = abs(num_residential - ideal_residential_per_kitchen * num_kitchen) * 5
+    common_score = abs(num_residential - ideal_residential_per_common * num_common) * 5
+    sanitary_score = abs(num_residential - ideal_residential_per_sanitary * num_sanitary) * 5
 
     # Ocena dostępności do korytarza
     accessibility_score = evaluateAccessibility(grid)
 
-    residential_score = num_residential * (-17)
+    residential_score = num_residential * (-20)
+
+    corridor_score = isCorridorFullyConnectedScore(grid) * 15
 
     # Łączna ocena
-    total_score = kitchen_score + common_score + sanitary_score + accessibility_score + distance_score + residential_score
+    total_score = kitchen_score + common_score + sanitary_score + accessibility_score + \
+                  kitchen_distance * 18 + sanitary_distance * 30 + common_distance * 9 + residential_score + corridor_score
     return total_score,
 
 
 def calculateAverageDistance(grid):
+    # def average_distance(locations1, locations2):
+    #     total_distance = 0
+    #     num_pairs = 0
+    #     ## Szukamy dystansu do najbliższego kontenera
+    #     for loc1 in locations1:
+    #         min_distance = 100
+    #         for loc2 in locations2:
+    #             distance = manhattanDistance(loc1, loc2)
+    #             min_distance = min(min_distance, distance)
+    #         total_distance += min_distance
+    #         num_pairs += 1
+    #
+    #     return total_distance / num_pairs if num_pairs > 0 else 500
+    def average_distance(locations1, locations2):
+        total_distance = sum(manhattanDistance(loc1, loc2) for loc1 in locations1 for loc2 in locations2)
+        return total_distance / (len(locations1) * len(locations2)) if locations1 and locations2 else 500
+
     residential_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == RESIDENTIAL]
-    other_container_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if
-                                 grid[i][j] in [KITCHEN, SANITARY, COMMON]]
+    kitchen_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == KITCHEN]
+    sanitary_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == SANITARY]
+    common_locations = [(i, j) for i in range(GRID_HEIGHT) for j in range(GRID_WIDTH) if grid[i][j] == COMMON]
 
-    total_distance = 0
-    for res_loc in residential_locations:
-        for other_loc in other_container_locations:
-            total_distance += manhattanDistance(res_loc, other_loc)
+    kitchen_average_distance = average_distance(residential_locations, kitchen_locations)
+    sanitary_average_distance = average_distance(residential_locations, sanitary_locations)
+    common_average_distance = average_distance(residential_locations, common_locations)
 
-    # Średnia odległość
-    if residential_locations and other_container_locations:
-        average_distance = total_distance / (len(residential_locations) * len(other_container_locations))
-    else:
-        average_distance = 0
+    return kitchen_average_distance, sanitary_average_distance, common_average_distance
 
-    return average_distance
 
+def runCorridor(grid, true_matrix, i ,j):
+    true_matrix[i][j] = 1
+    if (j + 1 < len(grid[i]) and grid[i][j + 1] == CORRIDOR and true_matrix[i][j+1] == 0):
+        runCorridor(grid, true_matrix, i, j+1)
+
+    if(i + 1 < len(grid) and grid[i + 1][j] == CORRIDOR and true_matrix[i+1][j] == 0):
+        runCorridor(grid, true_matrix, i+1, j)
+
+    if (j - 1 >= 0 and grid[i][j - 1] == CORRIDOR and true_matrix[i][j-1] == 0):
+        runCorridor(grid, true_matrix, i, j-1)
+
+    if (i - 1 >= 0 and grid[i - 1][j] == CORRIDOR and true_matrix[i-1][j] == 0):
+        runCorridor(grid, true_matrix, i-1, j)
+
+
+def isCorridorFullyConnectedScore(grid):
+    number_of_corridors = 0
+    true_matrix = np.zeros((GRID_WIDTH,GRID_HEIGHT))
+    for i in range(GRID_WIDTH):
+        for j in range(GRID_HEIGHT):
+            if grid[i][j] == CORRIDOR and true_matrix[i][j] == 0:
+                number_of_corridors += 1
+                runCorridor(grid, true_matrix, i ,j)
+            else:
+                true_matrix[i][j] = 1
+
+    return number_of_corridors
 
 def manhattanDistance(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
@@ -83,8 +126,8 @@ def isCorridorConnectedToCorridor(grid, i, j):
     # Sprawdza, czy dana komórka korytarza jest połączona z więcej niż jednym korytarzem lub jest na brzegu gridu
     numberOfNeighbourCorridors = (int(j + 1 < len(grid[i]) and grid[i][j + 1] == CORRIDOR) + int(
         i + 1 < len(grid) and grid[i + 1][j] == CORRIDOR) + int(
-        j - 1 > 0 and grid[i][j - 1] == CORRIDOR) + int(
-        i - 1 > 0 and grid[i - 1][j] == CORRIDOR))
+        j - 1 >= 0 and grid[i][j - 1] == CORRIDOR) + int(
+        i - 1 >= 0 and grid[i - 1][j] == CORRIDOR))
     logic_value = (numberOfNeighbourCorridors > 1) or \
                   (((j + 1 > len(grid[i])) or (j - 1 < 0) or (i + 1 > len(grid)) or (i - 1 < 0))
                    and numberOfNeighbourCorridors > 0)
@@ -99,7 +142,7 @@ def evaluateAccessibility(grid):
         for j in range(GRID_WIDTH):
             if grid[i][j] in [RESIDENTIAL, KITCHEN, COMMON, SANITARY]:
                 if not isDirectlyConnectedToCorridor(grid, i, j):
-                    accessibility_score += 20  # Duża kara za brak bezpośredniego połączenia
+                    accessibility_score += 30  # Duża kara za brak bezpośredniego połączenia
             if grid[i][j] == CORRIDOR:
                 if not isCorridorConnectedToCorridor(grid, i, j):
                     accessibility_score += 100  # Kara za niepołączone ze sobą korytarze
