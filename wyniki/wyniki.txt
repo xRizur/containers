@@ -1,0 +1,52 @@
+Metody selekcji:
+
+Początkowo sprawdziliśmy więszkosć metod selekcji na naszym problemie, z czego wyciągneliśmy wnioski.
+Część metod jak best i random nie są zbyt dobre dla naszego problemu w związku z poziomem zaawnsowania problemu.
+Najlepiej spisywały się metody o średnim zaawansowaniu jak roulette i Tournament.
+Metody selekcji jak LexiCase czy SPEA2 są zbyt zaawansowany dla dla naszego typu problemu który ma zbyt mało parametrów.
+
+Definicja Tournamentu
+deap.tools.selTournament(individuals, k, tournsize, fit_attr='fitness')[source]
+Select the best individual among tournsize randomly chosen individuals, k times. The list returned contains references to the input individuals.
+
+Parameters:	
+individuals – A list of individuals to select from.
+k – The number of individuals to select.
+tournsize – The number of individuals participating in each tournament.
+fit_attr – The attribute of individuals to use as selection criterion
+Returns:	
+A list of selected individuals.
+
+This function uses the choice() function from the python base random module.
+
+Metody mutacji:
+
+Z dostępnym metod mutacji spróbowaliśmy użyć innych, jednak do naszego problemu jedynym odpowiednim jest mutUniformInt, inne są na przykłąd do programowania genetycznego jak mutInsert lub do wartości binarnych jak mutFlipBit.
+
+Definicja wybranej:
+Mutate an individual by replacing attributes, with probability indpb, by a integer uniformly drawn between low and up inclusively.
+
+Parameters:	
+individual – Sequence individual to be mutated.
+low – The lower bound or a sequence of of lower bounds of the range from which to draw the new integer.
+up – The upper bound or a sequence of of upper bounds of the range from which to draw the new integer.
+indpb – Independent probability for each attribute to be mutated.
+Returns:	
+A tuple of one individual.
+
+
+
+Metody Crossoveru:
+Z metod crossoveru początkowo spróbowaliśmy większość, z czego wyłoniliśmy 4 które są zgodne dla naszych wymagań i projektu, z czego te 4 mają podobne wyniki, ostatecznie wybraliśmy cxTwoPoint które w późniejszych testach miało najlepsze wyniki.
+
+cxTwopoint definicja -> Executes a two-point crossover on the input sequence individuals. The two individuals are modified in place and both keep their original length. This function uses the randint() function from the Python base random module.
+
+Parametry ewolucji:
+Tutaj mamy te wykresy dla tych przedziałów liniowe, wiec poprostu wybraliśmy te najbardziej optymalne
+
+Można napisać że wybraliśmy 700 epok ponieważ po tej ilości zmienia się już nieznacznie i jest to dobry kompromis pomiędzy ilością epok
+No i że wybraliśmy te szanse mutacji i crossa
+
+
+Dokumentacja i definicje tych parametrów tutaj:
+https://deap.readthedocs.io/en/master/api/tools.html#deap.tools.selBest
